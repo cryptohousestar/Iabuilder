@@ -30,7 +30,8 @@ ENV/
 .vscode/
 .idea/
 .cursor/
-.claude/
+
+.ide-settings/
 *.swp
 *.swo
 *~
@@ -63,3 +64,4 @@ secrets.json
 .DS_Store
 Thumbs.db
 .git.backup/
+tests/
