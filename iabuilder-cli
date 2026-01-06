@@ -1,0 +1,76 @@
+#!/bin/bash
+# iabuilder - IABuilder CLI that works from any project directory
+
+# Colores para terminal
+GREEN='\033[0;32m'
+BLUE='\033[0;34m'
+YELLOW='\033[1;33m'
+RED='\033[0;31m'
+CYAN='\033[0;36m'
+NC='\033[0m' # No Color
+
+# Obtener el directorio del script actual (resolviéndolo si es un symlink)
+SCRIPT_PATH="$(readlink -f "$0")"
+SCRIPT_DIR="$(dirname "$SCRIPT_PATH")"
+IABUILDER_DIR="$SCRIPT_DIR"
+VENV_PATH="$IABUILDER_DIR/venv"
+
+# Verificar que el directorio de iabuilder y el entorno virtual existan
+if [ ! -d "$IABUILDER_DIR" ]; then
+    echo -e "${RED}Error: No se encontró el directorio de iabuilder en $IABUILDER_DIR${NC}"
+    echo -e "${YELLOW}Por favor verifica la instalación o reinstala el software${NC}"
+    exit 1
+fi
+
+if [ ! -d "$VENV_PATH" ]; then
+    echo -e "${YELLOW}⚠️ Entorno virtual no encontrado. Creando uno nuevo...${NC}"
+    cd "$IABUILDER_DIR"
+    python3 -m venv venv
+    . "$VENV_PATH/bin/activate"
+    pip install --upgrade pip
+    pip install -r requirements.txt
+    echo -e "${GREEN}✅ Entorno virtual creado y configurado correctamente${NC}"
+else
+    # El entorno virtual existe, solo lo activamos silenciosamente
+        . "$VENV_PATH/bin/activate" 2>/dev/null
+        # Verificar que tiktoken esté instalado
+        if ! python3 -c "import tiktoken" &> /dev/null; then
+            echo -e "${YELLOW}⚠️ Instalando módulo tiktoken...${NC}"
+            pip install tiktoken
+            echo -e "${GREEN}✅ tiktoken instalado correctamente${NC}"
+        fi
+
+        # Verificar conexión a la API de Groq
+        echo -e "${CYAN}Verificando conexión a la API de Groq...${NC}"
+        if python3 -c "import groq; client = groq.Groq(api_key='$GROQ_API_KEY'); print('✅ Conexión exitosa')" 2>/dev/null; then
+            echo -e "${GREEN}✅ API key válida${NC}"
+        else
+            echo -e "${RED}❌ Error: API key inválida o problema de conexión${NC}"
+            echo -e "${YELLOW}Si tienes problemas, puedes crear un archivo con tu API key en:${NC}"
+            echo -e "${CYAN}~/.iabuilder/apikey.txt${NC}"
+        fi
+fi
+
+# Banner de inicio
+echo -e "${BLUE}╔════════════════════════════════════════════════════════╗${NC}"
+echo -e "${BLUE}║                    ${GREEN}IABUILDER CLI${BLUE}                     ║${NC}"
+echo -e "${BLUE}║   ${YELLOW}Intelligent Architecture Builder with AI Support${BLUE}   ║${NC}"
+echo -e "${BLUE}╚════════════════════════════════════════════════════════╝${NC}"
+echo -e "${GREEN}📂 Directorio de trabajo:${NC} $(pwd)"
+echo -e "${YELLOW}🧰 Herramientas disponibles:${NC} lectura/escritura de archivos, comandos bash, búsqueda de código"
+echo -e "${YELLOW}🚀 Procesos en segundo plano:${NC} puedes ejecutar servidores y monitorear logs"
+echo -e "${YELLOW}🛠️  Funciones habilitadas:${NC} El modelo sabe que tiene acceso a estas herramientas"
+echo -e "${CYAN}🔑 API Key:${NC} ${GROQ_API_KEY:0:8}...${GROQ_API_KEY: -4}\n"
+
+# Configurar variables de entorno
+# API key should be configured by user via /configure-api command or environment variable
+# export GROQ_API_KEY="your-api-key-here"
+export IABUILDER_WORKING_DIR="$(pwd)"
+export PYTHONPATH="$IABUILDER_DIR:$PYTHONPATH"
+export GROQ_TOOLS_ENABLED="true"
+
+# Crear directorio de configuración si no existe
+mkdir -p ~/.iabuilder
+
+# Activar entorno virtual y ejecutar
+cd "$IABUILDER_DIR" && source venv/bin/activate && exec python3 launch_iabuilder.py "$@"

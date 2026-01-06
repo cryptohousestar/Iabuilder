@@ -1,0 +1,61 @@
+#!/bin/bash
+# groq-simple - Minimal CLI for Groq API (similar to Claude CLI)
+# A simplified version of groq-custom focusing on pure terminal interaction
+
+# Colors for terminal
+GREEN='\033[0;32m'
+BLUE='\033[0;34m'
+YELLOW='\033[1;33m'
+CYAN='\033[0;36m'
+RED='\033[0;31m'
+BOLD='\033[1m'
+NC='\033[0m' # No Color
+
+# Get script directory
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+
+# Banner
+cat << "EOF"
+╭─────────────────────────────────────────────────╮
+│                 GROQ SIMPLE CLI                 │
+│  Terminal interaction similar to Claude CLI     │
+╰─────────────────────────────────────────────────╯
+EOF
+
+echo -e "${YELLOW}Type your questions and the AI will respond directly in the terminal.${NC}"
+echo -e "${CYAN}Use Ctrl+C to exit at any time${NC}\n"
+
+# Configure environment
+# Set your Groq API key here or use environment variable
+# export GROQ_API_KEY="your-api-key-here"
+export GROQ_CUSTOM_WORKING_DIR="$(pwd)"
+export PYTHONPATH="$SCRIPT_DIR:$PYTHONPATH"
+export GROQ_TOOLS_ENABLED="true"
+export GROQ_SIMPLE_MODE="true"  # Enable simplified mode
+export GROQ_NO_BANNER="true"    # Disable the large banner
+
+# Display working directory
+echo -e "${GREEN}Working directory:${NC} $(pwd)\n"
+
+# Check if a model was specified as argument
+MODEL="llama-3.3-70b-versatile"  # Default model
+if [ $# -gt 0 ]; then
+  MODEL="$1"
+  echo -e "${YELLOW}Using model:${NC} ${CYAN}$MODEL${NC}\n"
+fi
+
+# Export model as environment variable
+export GROQ_MODEL="$MODEL"
+
+# Clear screen with delay to allow reading the info
+sleep 1
+clear
+
+# Show simplified prompt
+echo -e "${BOLD}${BLUE}GROQ AI${NC} - Type your question and press Enter. Type 'exit' to quit."
+echo -e "Working in: ${YELLOW}$(pwd)${NC} - Model: ${CYAN}$MODEL${NC}"
+echo -e "────────────────────────────────────────────────────────────────"
+echo
+
+# Change to project directory and run the launcher with simple mode
+cd "$SCRIPT_DIR" && . venv/bin/activate && exec python3 launch_groq_simple.py

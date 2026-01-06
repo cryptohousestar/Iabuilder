@@ -1,0 +1,29 @@
+# Core dependencies
+groq>=0.4.0
+python-dotenv>=1.0.0
+
+# CLI interface
+prompt-toolkit>=3.0.0
+rich>=13.0.0
+pygments>=2.15.0
+
+# Markdown rendering
+markdown-it-py>=3.0.0
+
+# Tools dependencies
+requests>=2.31.0
+beautifulsoup4>=4.12.0
+
+# Data validation and CLI
+pydantic>=2.0.0
+click>=8.1.0
+tiktoken>=0.5.0
+
+# Security
+keyring>=24.0.0
+PyYAML>=6.0.0
+
+# Development/Testing (optional)
+pytest>=7.0.0
+pytest-cov>=4.0.0
+

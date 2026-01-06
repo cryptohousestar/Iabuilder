@@ -1,0 +1,187 @@
+name: Create Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Get version from tag
+      id: get_version
+      run: echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
+    - name: Create Linux release archive
+      run: |
+        tar -czf iabuilder-${{ steps.get_version.outputs.version }}-linux.tar.gz \
+          --exclude='venv' \
+          --exclude='__pycache__' \
+          --exclude='.git' \
+          --exclude='*.log' \
+          --exclude='.iabuilder' \
+          --exclude='dist' \
+          --exclude='build' \
+          --exclude='.pytest_cache' \
+          --exclude='*.egg-info' \
+          .
+
+    - name: Create Linux installer script
+      run: |
+        cat > install_iabuilder_${{ steps.get_version.outputs.version }}_linux.sh << 'EOF'
+        #!/bin/bash
+        # IABuilder Linux Installer v${{ steps.get_version.outputs.version }}
+        set -e
+        echo "Installing IABuilder v${{ steps.get_version.outputs.version }}..."
+
+        # Extract archive
+        tar -xzf iabuilder-${{ steps.get_version.outputs.version }}-linux.tar.gz
+        cd iabuilder-${{ steps.get_version.outputs.version }}-linux
+
+        # Run installation
+        chmod +x install_iabuilder.sh
+        ./install_iabuilder.sh
+
+        echo "Installation complete! Run 'iabuilder' to start."
+        EOF
+        chmod +x install_iabuilder_${{ steps.get_version.outputs.version }}_linux.sh
+
+    - name: Create Windows release archive
+      run: |
+        zip -r iabuilder-${{ steps.get_version.outputs.version }}-windows.zip . \
+          -x "venv/*" "__pycache__/*" ".git/*" "*.log" ".iabuilder/*" "dist/*" "build/*" ".pytest_cache/*" "*.egg-info/*"
+
+    - name: Create Windows installer script
+      run: |
+        cat > install_iabuilder_${{ steps.get_version.outputs.version }}_windows.ps1 << 'EOF'
+        # IABuilder Windows Installer v${{ steps.get_version.outputs.version }}
+        Write-Host "Installing IABuilder v${{ steps.get_version.outputs.version }}..."
+
+        # Extract archive
+        Expand-Archive -Path iabuilder-${{ steps.get_version.outputs.version }}-windows.zip -DestinationPath .
+
+        # Run installation
+        .\install_iabuilder_windows.ps1
+
+        Write-Host "Installation complete! Run 'iabuilder' to start."
+        EOF
+
+    - name: Create macOS release archive
+      run: |
+        tar -czf iabuilder-${{ steps.get_version.outputs.version }}-macos.tar.gz \
+          --exclude='venv' \
+          --exclude='__pycache__' \
+          --exclude='.git' \
+          --exclude='*.log' \
+          --exclude='.iabuilder' \
+          --exclude='dist' \
+          --exclude='build' \
+          --exclude='.pytest_cache' \
+          --exclude='*.egg-info' \
+          .
+
+    - name: Create macOS installer script
+      run: |
+        cat > install_iabuilder_${{ steps.get_version.outputs.version }}_macos.sh << 'EOF'
+        #!/bin/bash
+        # IABuilder macOS Installer v${{ steps.get_version.outputs.version }}
+        set -e
+        echo "Installing IABuilder v${{ steps.get_version.outputs.version }}..."
+
+        # Extract archive
+        tar -xzf iabuilder-${{ steps.get_version.outputs.version }}-macos.tar.gz
+        cd iabuilder-${{ steps.get_version.outputs.version }}-macos
+
+        # Run installation
+        chmod +x install_iabuilder_macos.sh
+        ./install_iabuilder_macos.sh
+
+        echo "Installation complete! Run 'iabuilder' to start."
+        EOF
+        chmod +x install_iabuilder_${{ steps.get_version.outputs.version }}_macos.sh
+
+    - name: Create Release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref }}
+        release_name: IABuilder v${{ steps.get_version.outputs.version }}
+        body: |
+          ## IABuilder v${{ steps.get_version.outputs.version }}
+
+          ### Downloads
+          - **Linux**: Download and run `install_iabuilder_${{ steps.get_version.outputs.version }}_linux.sh`
+          - **macOS**: Download and run `install_iabuilder_${{ steps.get_version.outputs.version }}_macos.sh`
+          - **Windows**: Download and run `install_iabuilder_${{ steps.get_version.outputs.version }}_windows.ps1`
+
+          ### What's New
+          - See changelog for details
+
+        draft: false
+        prerelease: false
+
+    - name: Upload Linux release
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./iabuilder-${{ steps.get_version.outputs.version }}-linux.tar.gz
+        asset_name: iabuilder-${{ steps.get_version.outputs.version }}-linux.tar.gz
+        asset_content_type: application/gzip
+
+    - name: Upload Linux installer
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./install_iabuilder_${{ steps.get_version.outputs.version }}_linux.sh
+        asset_name: install_iabuilder_${{ steps.get_version.outputs.version }}_linux.sh
+        asset_content_type: application/x-shellscript
+
+    - name: Upload Windows release
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./iabuilder-${{ steps.get_version.outputs.version }}-windows.zip
+        asset_name: iabuilder-${{ steps.get_version.outputs.version }}-windows.zip
+        asset_content_type: application/zip
+
+    - name: Upload Windows installer
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./install_iabuilder_${{ steps.get_version.outputs.version }}_windows.ps1
+        asset_name: install_iabuilder_${{ steps.get_version.outputs.version }}_windows.ps1
+        asset_content_type: application/x-powershell
+
+    - name: Upload macOS release
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./iabuilder-${{ steps.get_version.outputs.version }}-macos.tar.gz
+        asset_name: iabuilder-${{ steps.get_version.outputs.version }}-macos.tar.gz
+        asset_content_type: application/gzip
+
+    - name: Upload macOS installer
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./install_iabuilder_${{ steps.get_version.outputs.version }}_macos.sh
+        asset_name: install_iabuilder_${{ steps.get_version.outputs.version }}_macos.sh
+        asset_content_type: application/x-shellscript
