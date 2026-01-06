@@ -129,10 +129,12 @@ def main():
         # Import and initialize the application
         from iabuilder.main import IABuilderApp
 
-        # Check Groq API key
+        # Check Groq API key - don't fail immediately, let user configure it
         if not os.environ.get("GROQ_API_KEY"):
-            print("❌ Error: GROQ_API_KEY environment variable is not set")
-            sys.exit(1)
+            print("⚠️  No API key configured yet.")
+            print("💡 Type '/configure-api groq' to set up your API key")
+            print("   Or '/help' for available commands")
+            print()
 
         # Initialize the app
         app = IABuilderApp(working_directory=working_directory)

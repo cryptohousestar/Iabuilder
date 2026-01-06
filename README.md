@@ -489,39 +489,6 @@ iabuilder
 - ✅ Safe mode available for destructive operations
 - ⚠️ **Production note**: Use real encryption for API keys
 
-## 🆚 Comparison
-
-| Feature | IABuilder | Claude Code | Cursor | Zed |
-|---------|-----------|-------------|--------|-----|
-| **Multi-Provider** | ✅ 9+ providers | ❌ Anthropic only | ❌ OpenAI only | ❌ Custom only |
-| **Terminal-First** | ✅ | ✅ | ❌ (GUI) | ❌ (GUI) |
-| **Function Calling** | ✅ Atomic tools | ✅ | ✅ | ✅ |
-| **Context Compression** | ✅ | ✅ | ❌ | ❌ |
-| **Project-Aware** | ✅ | ✅ | ✅ | ✅ |
-| **Model Switching** | ✅ Cross-provider | ❌ | ❌ | ✅ Limited |
-| **Cost** | Free/BYOK | Free tier + paid | Paid | Free |
-| **Offline** | ❌ | ❌ | ❌ | ✅ Partial |
-
-## 🚀 Roadmap
-
-### Completed (Version 3.0) ✅
-- [x] Multi-provider architecture
-- [x] 9 provider integrations
-- [x] Model registry with caching
-- [x] Prompt optimization per model family
-- [x] Provider/model management commands
-- [x] Rename to IABuilder
-
-### Future Enhancements
-- [ ] Real encryption for API keys (currently base64)
-- [ ] Plugin system for custom providers
-- [ ] Conversation templates
-- [ ] Code snippets library
-- [ ] Model benchmarking
-- [ ] Parallel model requests
-- [ ] Custom model fine-tuning integration
-- [ ] Team collaboration features
-
 ## 🤝 Contributing
 
 Contributions are welcome! Please:
@@ -550,5 +517,3 @@ MIT License - see LICENSE file for details.
 - Documentation: [Full docs](./docs/)
 
 ---
-
-**Made with ❤️ for developers who want universal AI assistance without vendor lock-in.**

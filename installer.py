@@ -225,6 +225,23 @@ ask_directory() {
     echo "Starting IABuilder in: $user_dir"
     cd "$(dirname "$0")"
     export IABUILDER_WORKING_DIR="$user_dir"
+
+    # Check if API key is configured
+    if [ -z "$GROQ_API_KEY" ] && [ ! -f "$HOME/.iabuilder/config.json" ]; then
+        echo ""
+        echo "⚠️  No API key configured yet."
+        echo ""
+        echo "To configure your API key:"
+        echo "1. Go to: https://console.groq.com/keys"
+        echo "2. Copy your API key"
+        echo "3. Run: /configure-api groq"
+        echo "4. Then paste your API key when prompted"
+        echo ""
+        echo "Starting IABuilder in configuration mode..."
+        echo "Type '/configure-api groq' to set up your API key."
+        echo ""
+    fi
+
     python3 launch_iabuilder.py
 }
 
@@ -277,7 +294,7 @@ fi
         desktop_content = f"""[Desktop Entry]
 Name=IABuilder
 Comment=Intelligent Architecture Builder
-Exec=gnome-terminal -- bash -c "cd '{self.install_dir}' && bash iabuilder-launcher.sh --interactive; exec bash"
+Exec={self.install_dir}/iabuilder-launcher.sh
 Icon=utilities-terminal
 Terminal=false
 Type=Application
