@@ -22,6 +22,7 @@ class IABuilderInstaller:
             'green': '\033[92m',
             'yellow': '\033[93m',
             'blue': '\033[94m',
+            'cyan': '\033[96m',
             'reset': '\033[0m',
             'bold': '\033[1m'
         }
@@ -91,13 +92,17 @@ class IABuilderInstaller:
             # Create installation directory
             self.install_dir.mkdir(parents=True, exist_ok=True)
 
-            # Copy all files except installer itself
+            # Copy all files except installer itself and git files
             for item in self.script_dir.iterdir():
-                if item.name != "installer.py" and not item.name.startswith("install_iabuilder"):
+                if (item.name != "installer.py" and
+                    not item.name.startswith("install_iabuilder") and
+                    not item.name.startswith(".git")):
                     if item.is_file():
                         shutil.copy2(item, self.install_dir)
                     else:
-                        shutil.copytree(item, self.install_dir / item.name, dirs_exist_ok=True)
+                        # Skip .git directory
+                        if item.name != ".git":
+                            shutil.copytree(item, self.install_dir / item.name, dirs_exist_ok=True)
 
             # Create the interactive launcher
             self.create_interactive_launcher()
@@ -114,31 +119,130 @@ class IABuilderInstaller:
         launcher_content = '''#!/bin/bash
 # IABuilder Interactive Desktop Launcher
 
-echo "=================================================="
-echo "🤖 IABUILDER DESKTOP LAUNCHER"
-echo "=================================================="
-echo
-echo "Enter the directory where you want to start IABuilder:"
-echo "(Press Enter to use current directory)"
-echo
+# Function to find the best available terminal
+find_best_terminal() {
+    # List of terminals in order of preference (best to worst)
+    local terminals=(
+        "alacritty"        # Modern, fast
+        "terminator"       # Feature-rich
+        "tilix"           # Modern tiling terminal
+        "gnome-terminal"  # GNOME default
+        "konsole"         # KDE default
+        "lxterminal"      # LXDE/LXQt
+        "xfce4-terminal"  # XFCE
+        "mate-terminal"   # MATE
+        "sakura"          # Lightweight
+        "st"              # Simple terminal (suckless)
+        "urxvt"           # rxvt-unicode
+        "rxvt"            # Old rxvt
+        "xterm"           # Basic fallback
+    )
 
-read -p "Directory: " user_dir
+    for terminal in "${terminals[@]}"; do
+        if command -v "$terminal" &> /dev/null; then
+            echo "$terminal"
+            return 0
+        fi
+    done
 
-if [ -z "$user_dir" ]; then
-    user_dir="$PWD"
+    # If no terminal found, return empty
+    echo ""
+    return 1
+}
+
+# Function to run command in the best available terminal
+run_in_terminal() {
+    local cmd="$1"
+    local terminal=$(find_best_terminal)
+
+    if [ -z "$terminal" ]; then
+        echo "ERROR: No terminal emulator found!"
+        echo "Please install a terminal emulator like:"
+        echo "  - alacritty (recommended)"
+        echo "  - gnome-terminal"
+        echo "  - konsole"
+        echo "  - lxterminal"
+        echo "  - xfce4-terminal"
+        exit 1
+    fi
+
+    case "$terminal" in
+        alacritty)
+            alacritty -e bash -c "$cmd; exec bash" ;;
+        terminator)
+            terminator -e "bash -c '$cmd; exec bash'" ;;
+        tilix)
+            tilix -e "bash -c '$cmd; exec bash'" ;;
+        gnome-terminal)
+            gnome-terminal -- bash -c "$cmd; exec bash" ;;
+        konsole)
+            konsole -e bash -c "$cmd; exec bash" ;;
+        lxterminal)
+            lxterminal -e "bash -c '$cmd; exec bash'" ;;
+        xfce4-terminal)
+            xfce4-terminal -e "bash -c '$cmd; exec bash'" ;;
+        mate-terminal)
+            mate-terminal -e "bash -c '$cmd; exec bash'" ;;
+        sakura)
+            sakura -e "bash -c '$cmd; exec bash'" ;;
+        st)
+            st -e bash -c "$cmd; exec bash" ;;
+        urxvt)
+            urxvt -e bash -c "$cmd; exec bash" ;;
+        rxvt)
+            rxvt -e bash -c "$cmd; exec bash" ;;
+        xterm)
+            xterm -e bash -c "$cmd; exec bash" ;;
+        *)
+            echo "ERROR: Unsupported terminal: $terminal"
+            exit 1 ;;
+    esac
+}
+
+# Function to ask for directory
+ask_directory() {
+    echo "=================================================="
+    echo "🤖 IABUILDER DESKTOP LAUNCHER"
+    echo "=================================================="
+    echo
+    echo "Enter the directory where you want to start IABuilder:"
+    echo "(Press Enter to use current directory)"
+    echo
+
+    read -p "Directory: " user_dir
+
+    if [ -z "$user_dir" ]; then
+        user_dir="$PWD"
+    fi
+
+    if [ ! -d "$user_dir" ]; then
+        echo "Directory does not exist: $user_dir"
+        echo "Press Enter to continue..."
+        read
+        exit 1
+    fi
+
+    echo "Starting IABuilder in: $user_dir"
+    cd "$(dirname "$0")"
+    export IABUILDER_WORKING_DIR="$user_dir"
+    python3 launch_iabuilder.py
+}
+
+# Check if we're running in a terminal
+if [ -t 0 ]; then
+    # We're in a terminal, run interactively
+    ask_directory
+else
+    # We're not in a terminal, open one with the best available terminal
+    SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    CMD="cd '$SCRIPT_DIR' && bash '$0' --interactive"
+    run_in_terminal "$CMD"
 fi
 
-if [ ! -d "$user_dir" ]; then
-    echo "Directory does not exist: $user_dir"
-    echo "Press Enter to exit..."
-    read
-    exit 1
+# Handle --interactive flag
+if [ "$1" = "--interactive" ]; then
+    ask_directory
 fi
-
-echo "Starting IABuilder in: $user_dir"
-cd "$(dirname "$0")"
-export IABUILDER_WORKING_DIR="$user_dir"
-python3 launch_iabuilder.py
 '''
 
         launcher_path = self.install_dir / "iabuilder-launcher.sh"
@@ -173,11 +277,12 @@ python3 launch_iabuilder.py
         desktop_content = f"""[Desktop Entry]
 Name=IABuilder
 Comment=Intelligent Architecture Builder
-Exec=gnome-terminal -- bash "{self.install_dir}/iabuilder-launcher.sh"
-Icon=terminal
+Exec=gnome-terminal -- bash -c "cd '{self.install_dir}' && bash iabuilder-launcher.sh --interactive; exec bash"
+Icon=utilities-terminal
 Terminal=false
 Type=Application
-Categories=Development;
+Categories=Development;Utility;
+StartupNotify=true
 """
 
         desktop_file.write_text(desktop_content)

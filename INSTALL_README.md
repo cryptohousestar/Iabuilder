@@ -30,10 +30,26 @@
 
 ### 🎯 Desktop Shortcut:
 After installation, you'll have a **desktop shortcut** that:
-1. Opens a terminal window
+1. **Automatically detects and opens your best available terminal** (alacritty, gnome-terminal, konsole, lxterminal, etc.)
 2. Asks: `"Enter the directory where you want to start IABuilder:"`
-3. You type/paste your project path
+3. You type/paste your project path (easy copy/paste in modern terminals!)
 4. IABuilder starts in that directory
+
+## 🖥️ Terminal Selection
+
+The installer automatically detects and uses the best available terminal:
+
+**Preferred (Modern terminals with great copy/paste):**
+- 🥇 **Alacritty** - Fast, modern, excellent copy/paste
+- 🥈 **Terminator** - Feature-rich with tabs and splits
+- 🥉 **Tilix** - Modern tiling terminal
+- 🏆 **GNOME Terminal** - Default GNOME terminal
+- 🏆 **Konsole** - Default KDE terminal
+- 🏆 **LX Terminal** - Lightweight and fast
+
+**Other supported terminals:**
+- XFCE Terminal, MATE Terminal, Sakura, etc.
+- **xterm** (fallback only if no other terminal is found)
 
 ## 📋 System Requirements:
 
